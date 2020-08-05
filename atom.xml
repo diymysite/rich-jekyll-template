@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+ <title>基线 Baseline</title>
+ <link href="https://diymysite.github.io//blog/atom.xml" rel="self"/>
+ <link href="https://diymysite.github.io//blog/"/>
+ <updated>2020-08-05T06:32:50+00:00</updated>
+ <id>https://diymysite.github.io//blog</id>
+ <author>
+   <name>基线 Baseline</name>
+   <email>terminus2049@protonmail.com</email>
+ </author>
+
+ 
+ <entry>
+   <title>为博客添加强大的Algolia本地搜索功能</title>
+   <link href="https://diymysite.github.io//blog/archive/2020/01/20/add-algolia-search.html"/>
+   <updated>2020-01-20T00:00:00+00:00</updated>
+   <id>https://diymysite.github.io//archive/2020/01/20/add-algolia-search</id>
+   <content type="html">&lt;p&gt;原来的搜索功能只能检索标题和description, 这对于很多博主来说是远远不够的。这里介绍添加能搜索所有博客全文的Algolia搜索框。&lt;/p&gt;
+
+&lt;p&gt;具体需要添加的代码本博客已经完成，主要参考Algolia的官方文档。这里介绍如何利用本项目已经写好的代码，把搜索功能移植到你自己的博客。&lt;/p&gt;
+
+&lt;h2 id=&quot;配置_configyml文件&quot;&gt;配置_config.yml文件&lt;/h2&gt;
+&lt;p&gt;首先，你要注册一个&lt;a href=&quot;https://www.algolia.com/&quot;&gt;Algolia&lt;/a&gt;免费帐号，注册后进入你的Dashboard –&amp;gt; API Keys这里可以看到自己的 Application ID 和一个 Search-Only API Key 和一个 Admin API Key. 然后在Dashboard–&amp;gt;Indices中创建一个新的Index （比如本博客的Index是 &lt;code class=&quot;highlighter-rouge&quot;&gt;DIYMYSITE&lt;/code&gt;）。把上述信息添加到 &lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt; 中：&lt;/p&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;# _config.html&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;jekyll-algolia&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# 新添加&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;exclude&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;vendor&lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;# 新添加&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# 新添加&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;algolia&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;application_id&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;AQ2NWA6FRT&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# 换成你的Application ID&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;index_name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;     &lt;span class=&quot;s&quot;&gt;DIYMYSITE&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# 换成你新创建的Index名称&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;search_only_api_key&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;533d855435d988fee73b330d3df4e41c&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# 换成你的Search-Only API Key&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;files_to_exclude&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;pi&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;404.md&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;about.md&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;README.md&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;# 列举要排除出搜索结果的文件&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;这样就完成了&lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt;的配置。&lt;/p&gt;
+
+&lt;h2 id=&quot;配置travis-ci&quot;&gt;配置Travis CI&lt;/h2&gt;
+&lt;p&gt;为了让搜索反应最新的博文内容，每次更新网站内容后需要重新更新你的Index。在本地环境下可以通过以下命令完成。&lt;/p&gt;
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;ALGOLIA_API_KEY&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'&amp;lt;Replace Me with your Admin API Key&amp;gt;'&lt;/span&gt; bundle &lt;span class=&quot;nb&quot;&gt;exec &lt;/span&gt;jekyll algolia
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;这里就需要用到前面的Admin API Key了，这个Key只应该你自己知道，因为它能改写你的所有Index。&lt;/p&gt;
+
+&lt;p&gt;我们还可以利用Travis CI将上述操作自动化。首先你要注册&lt;a href=&quot;https://travis-ci.org&quot;&gt;travis-ci.org&lt;/a&gt;，推荐你用自己的github帐号认证注册，这样就能把你的所有公开仓库自动同步过去。我们的博客代码仓库已经包含了Travis CI的配置文件&lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;# .travis.yml&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;# This file should be at the root of your project&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;language&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;ruby&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;cache&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bundler&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;before_install&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;gem install bundler&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;script&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bundle exec jekyll algolia&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;branches&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;only&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;# Change this to gh-pages if you're deploying using the gh-pages branch&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;master&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;rvm&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+ &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2.4&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;它将自动执行&lt;code class=&quot;highlighter-rouge&quot;&gt;bundle exec jekyll algolia&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;最后，你需要在travis-ci.org将你的项目仓库同步过去，并且在项目左侧的“设置settings”中添加环境变量： Name &lt;code class=&quot;highlighter-rouge&quot;&gt;ALGOLIA_API_KEY&lt;/code&gt;, Value &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;Replace Me with your Admin API Key&amp;gt;&lt;/code&gt;。这样设置好后，Travis CI就会在你每次push到github仓库后自动帮你更新索引库（Index）了。&lt;/p&gt;
+
+&lt;p&gt;现在，你可以在Travis CI选择‘Trigger build’看看能否编译成功，如果成功那就大功告成了。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>计划发布-为什么要建这个博客</title>
+   <link href="https://diymysite.github.io//blog/archive/2020/01/17/why-you-do-this.html"/>
+   <updated>2020-01-17T00:00:00+00:00</updated>
+   <id>https://diymysite.github.io//archive/2020/01/17/why-you-do-this</id>
+   <content type="html">&lt;p&gt;这里提供无需服务器、域名、完全开源、无第三方跟踪代码、容易上手的个人网站模板，尤其适合政治敏感的公益项目，例如这些&lt;a href=&quot;https://github.com/Terminus2049/Awesome-Social-Impact&quot;&gt;Awesome Social Impact Projects&lt;/a&gt;，或&lt;a href=&quot;https://program-think.blogspot.com&quot;&gt;【编程随想】&lt;/a&gt;那样的匿名活动家。&lt;/p&gt;
+
+&lt;h2 id=&quot;1-博客-部落格-blog&quot;&gt;1 博客 部落格 Blog&lt;/h2&gt;
+&lt;p&gt;基于Jekyll和Github Pages的个人博客，在保证安全性的前提下，提供各种小插件和小功能，让你的博客易于管理。最初由&lt;a href=&quot;https://github.com/terminusbot/&quot;&gt;TerminusBot&lt;/a&gt;对kiko-now主题的改造增强，DIY My Site在此基础上进一步增强。&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;代码仓库 &lt;a href=&quot;https://github.com/diymysite/blog&quot;&gt;https://github.com/diymysite/blog&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Demo: &lt;a href=&quot;https://diymysite.github.io/blog/&quot;&gt;https://diymysite.github.io/blog/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;2-流量分析&quot;&gt;2 流量分析&lt;/h2&gt;
+&lt;p&gt;流量分析对业务经营开展很重要，但目前主流的流量分析插件对用户的隐私保护不好，会过多搜集用户隐私信息，因此这里试图找到隐私友好的流量分析插件。&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;代码仓库 &lt;a href=&quot;https://github.com/diymysite/analytics&quot;&gt;https://github.com/diymysite/analytics&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;（请在Tor环境下访问）Demo &lt;a href=&quot;https://diymysite.github.io/analytics/&quot;&gt;https://diymysite.github.io/analytics/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;常见问题&quot;&gt;常见问题&lt;/h2&gt;
+&lt;p&gt;一 &lt;strong&gt;为什么推荐用Github Page搭建网站？&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;&lt;strong&gt;完全免费&lt;/strong&gt; 不需要购买服务器、虚拟主机、域名、以及CDN服务。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;优良性能&lt;/strong&gt; Github作为最大的代码托管商，它的基础设施的性能非常优秀。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;匿名性&lt;/strong&gt; 因为Github可以用匿名邮箱注册，且建站不需要花钱，因此党国无法通过任何手段查到你是谁，只要你自己不说。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;穿墙&lt;/strong&gt; GFW用DNS污染github.io的特定子域名，墙内的小伙伴有多种方式免翻墙直接访问你的网站，DNS-over-HTTPS 或者git clone你的项目到本地浏览。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;可移植&lt;/strong&gt; 你可以在Gitlab, Bitbucket等代码托管商建立自动备份仓库，整个网站的代码完全由你控制。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;分享发现&lt;/strong&gt; 在Github上，很多人可以通过关键词、Star、Fork等方式发现并分享你的网站。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;二 &lt;strong&gt;第三方跟踪代码有什么风险？&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;第三方跟踪代码可能会跟踪网站访问者的隐私信息，例如IP地址、操作系统、点击、甚至是实时的动作，可能泄露访问者身份，这对政治敏感网站而言很不好。&lt;/li&gt;
+  &lt;li&gt;第三方跟踪代码可能会大大降低页面的加载速度。&lt;/li&gt;
+&lt;/ol&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>未来的文章-添加插件和高级功能</title>
+   <link href="https://diymysite.github.io//blog/archive/2020/01/14/scheduled-post.html"/>
+   <updated>2020-01-14T00:00:00+00:00</updated>
+   <id>https://diymysite.github.io//archive/2020/01/14/scheduled-post</id>
+   <content type="html">&lt;p&gt;这篇文章介绍如何添加一些常见的插件和功能扩展。&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#功能插件&quot; id=&quot;markdown-toc-功能插件&quot;&gt;功能插件&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#1-回到首页&quot; id=&quot;markdown-toc-1-回到首页&quot;&gt;1. 回到首页&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#2-社交分享&quot; id=&quot;markdown-toc-2-社交分享&quot;&gt;2. 社交分享&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#21-jquery-social-share-buttons&quot; id=&quot;markdown-toc-21-jquery-social-share-buttons&quot;&gt;2.1 jquery social share buttons&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#22-无javascript的分享按钮-推荐&quot; id=&quot;markdown-toc-22-无javascript的分享按钮-推荐&quot;&gt;2.2 无javascript的分享按钮 （推荐）&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#3-安全的流量统计&quot; id=&quot;markdown-toc-3-安全的流量统计&quot;&gt;3. 安全的流量统计&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#31-基于freecounterstat的非javascript计数器&quot; id=&quot;markdown-toc-31-基于freecounterstat的非javascript计数器&quot;&gt;3.1 基于FreeCounterStat的非javascript计数器&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#32-基于javascript但不使用cookies的流量分析-ticksel&quot; id=&quot;markdown-toc-32-基于javascript但不使用cookies的流量分析-ticksel&quot;&gt;3.2 基于javascript但不使用cookies的流量分析 Ticksel&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#评论区&quot; id=&quot;markdown-toc-评论区&quot;&gt;评论区&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#计划发布&quot; id=&quot;markdown-toc-计划发布&quot;&gt;计划发布&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;功能插件&quot;&gt;功能插件&lt;/h2&gt;
+
+&lt;h3 id=&quot;1-回到首页&quot;&gt;1. 回到首页&lt;/h3&gt;
+
+&lt;p&gt;对于习惯发长文的朋友来说，这个功能十分方便。已经包括在主页中，无需任何配置。如果你想改变按钮的样式，请参考 &lt;a href=&quot;https://github.com/vfeskov/vanilla-back-to-top&quot;&gt;这里&lt;/a&gt;, 修改本项目中 &lt;code class=&quot;highlighter-rouge&quot;&gt;_include/back-to-top.html&lt;/code&gt; 文件。&lt;/p&gt;
+
+&lt;h3 id=&quot;2-社交分享&quot;&gt;2. 社交分享&lt;/h3&gt;
+
+&lt;p&gt;社交网络的分享按钮能帮助你快速增长自己的受众，不过很多第三方社交分享按钮，例如shareaholic, addthis等都有跟踪代码，可能泄漏读者的隐私。
+因此鼓励采用非第三方javascript的社交分享按钮。
+目前包括了两种&lt;/p&gt;
+&lt;h4 id=&quot;21-jquery-social-share-buttons&quot;&gt;2.1 jquery social share buttons&lt;/h4&gt;
+&lt;p&gt;你只需要在&lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt; 文件中的改成这样&lt;/p&gt;
+&lt;div class=&quot;language-yml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;sharebuttons&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;jquery&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;nojavascript&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;false&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h4 id=&quot;22-无javascript的分享按钮-推荐&quot;&gt;2.2 无javascript的分享按钮 （推荐）&lt;/h4&gt;
+&lt;p&gt;来自 &lt;a href=&quot;https://sharingbuttons.io&quot;&gt;https://sharingbuttons.io&lt;/a&gt;, 只需要将&lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt; 文件中的以下部分改为&lt;/p&gt;
+&lt;div class=&quot;language-yml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;sharebuttons&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;jquery&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;false&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;nojavascript&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;你可以看到默认开启的是无javascript的分享按钮。&lt;/p&gt;
+
+&lt;h3 id=&quot;3-安全的流量统计&quot;&gt;3. 安全的流量统计&lt;/h3&gt;
+
+&lt;h4 id=&quot;31-基于freecounterstat的非javascript计数器&quot;&gt;3.1 基于&lt;a href=&quot;https://www.freecounterstat.com&quot;&gt;FreeCounterStat&lt;/a&gt;的非javascript计数器&lt;/h4&gt;
+&lt;p&gt;页脚包含一个uBlock Origin认证安全的网页点击计数器，博客每获得一次点击就会累加1，这对博主而言可以大概的知道自己网站的访问量。配置方法如下：&lt;/p&gt;
+
+&lt;p&gt;首先，到&lt;a href=&quot;https://www.freecounterstat.com&quot;&gt;FreeCounterStat&lt;/a&gt;申请一个新的计数器。第三步完成后，将产生的非javascript代码中的图片编号复制，例如&lt;/p&gt;
+&lt;div class=&quot;language-html highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;https://www.freecounterstat.com&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;title=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;free hit counters&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;https://counter1.wheredoyoucomefrom.ovh/private/freecounterstat.php?c=ghfqhne7z87531aunzg4cqds8kfcekpa&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;border=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;title=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;free hit counters&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;free hit counters&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;将上述代码中的字符串 &lt;code class=&quot;highlighter-rouge&quot;&gt;ghfqhne7z87531aunzg4cqds8kfcekpa&lt;/code&gt; 复制到 &lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt; 中的 &lt;code class=&quot;highlighter-rouge&quot;&gt;webcounterimg: ghfqhne7z87531aunzg4cqds8kfcekpa&lt;/code&gt; 即可.&lt;/p&gt;
+
+&lt;p&gt;这种方法只能获得大致的点击率，并不能提供较详细的流量分析，例如每日流量、各个页面的访问量、交叉来源等。&lt;/p&gt;
+
+&lt;h4 id=&quot;32-基于javascript但不使用cookies的流量分析-ticksel&quot;&gt;3.2 基于javascript但不使用cookies的流量分析 &lt;a href=&quot;https://www.ticksel.com&quot;&gt;Ticksel&lt;/a&gt;&lt;/h4&gt;
+&lt;p&gt;我们主要利用这两个浏览器插件来检测第三方跟踪代码：&lt;a href=&quot;https://noscript.net/&quot;&gt;NoScript&lt;/a&gt; 和 &lt;a href=&quot;https://github.com/gorhill/uBlock&quot;&gt;uBlockOrigin&lt;/a&gt;。前者可以禁止网页上的javascripts, 后者则封锁包括javascript、图片等任何可能侵犯隐私的插件。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.ticksel.com&quot;&gt;Ticksel&lt;/a&gt;实现流量分析靠javascript，当javascript被禁止时则靠图片。根据Ticksel的官方网站描述，其javascript元素不使用cookies、保持对网页访问者的隐私友好、并尊重浏览器的Do Not Track标识。同时Ticksel的分析数据也是通过非对称密钥加密存放在其服务器上，也就是说你的数据除了你自己，即便是Ticksel的后台也无法访问。&lt;/p&gt;
+
+&lt;p&gt;使用方法：第一步先注册Ticksel会员, 第二步产生Tags，第三步配置跟踪代码（主要是选择加什么Tag）这样通过不同的Tag，你可以在一个地方对自己的多个网站进行流量分析，第四步将跟踪代码复制到你的网页。对于Jekyll Kiko-now来说，可已将跟踪代码放到 &lt;code class=&quot;highlighter-rouge&quot;&gt;_include/footer.html&lt;/code&gt;中进而布置到所有页面。&lt;/p&gt;
+
+&lt;p&gt;具体可参考我们的&lt;a href=&quot;https://github.com/diymysite/analytics&quot;&gt;流量分析项目&lt;/a&gt;及其&lt;a href=&quot;https://diymysite.github.io/analytics&quot;&gt;演示站点&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;注意：一般来说，为保护自己的隐私，请仅在Tor环境下打开未知或实验性链接。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;如果你安装了uBlock Origin的话，可以看到uBlock Origin并没有封锁Ticksel，说明uBlock认为Ticksel是安全的。事实上因为Ticksel对隐私的保护的注重，很多ad blocker都不封锁Ticksel的流量分析脚本。&lt;/p&gt;
+
+&lt;h2 id=&quot;评论区&quot;&gt;评论区&lt;/h2&gt;
+&lt;p&gt;推荐使用gitalk模块将Github Issue作为评论区，具体设置请参考&lt;a href=&quot;https://github.com/gitalk/gitalk/blob/master/readme-cn.md&quot;&gt;这里&lt;/a&gt;。注意，申请好的clientID等参数放到&lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt;中，如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;gitalk&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;clientID&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;ac14c26bcf8a16e03567&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;clientSecret&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;443574e2aa0e8bccf03adac267a82fdaa0a346c2&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;repo&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;blog&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;owner&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;diymysite&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;admin&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;DamoresClub&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;TerminusBot&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;chinatimeline&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;diymysite&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;另外，要开启评论区的页面的YAML参数区设置&lt;code class=&quot;highlighter-rouge&quot;&gt;comments: ture&lt;/code&gt;, 参考本页&lt;/p&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nn&quot;&gt;---&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;layout&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;post&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;未来的文章-添加插件和高级功能&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;date&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;2020-01-14&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;categories&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Archive&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;tags&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;示例&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;comments&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;description&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;未来的文章-添加插件和高级功能-创建于2020-01-12-但会直到2020-01-14再发布&lt;/span&gt;
+&lt;span class=&quot;nn&quot;&gt;---&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;计划发布&quot;&gt;计划发布&lt;/h2&gt;
+&lt;p&gt;有时候你可能提前写好博文，想等到某一天再发布，jekyll 也支持这个功能，但Github Page默认不支持，要开启该功能，要在&lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt;中添加一行&lt;code class=&quot;highlighter-rouge&quot;&gt;future: false&lt;/code&gt;，否则未来日期的博文会被直接发布。&lt;/p&gt;
+
+&lt;p&gt;计划发布需要利用Github Action，这里我们用以下代码CI代码实现除每次push作为触发之外，还会每日自动build两次，这样就可以把设定在‘未来’的post定期发布了。&lt;/p&gt;
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Jekyll Deploy&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;on&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;push&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;branches&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;master&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;schedule&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;cron&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;1,30&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;*'&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;jobs&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;build_and_deploy&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;runs-on&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;ubuntu-latest&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;steps&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;uses&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;actions/checkout@v1&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Build &amp;amp; Deploy to GitHub Pages&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+          &lt;span class=&quot;na&quot;&gt;GITHUB_TOKEN&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${ secrets.ACCESS_TOKEN }&lt;/span&gt;
+          &lt;span class=&quot;na&quot;&gt;GITHUB_REPOSITORY&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${ secrets.GITHUB_REPOSITORY }&lt;/span&gt;
+          &lt;span class=&quot;na&quot;&gt;GITHUB_ACTOR&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;${ secrets.GITHUB_ACTOR }&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;uses&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;BryanSchuetz/jekyll-deploy-gh-pages@master&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;注意:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;你需要先申请一个Personal Access Token, 在项目的settings–&amp;gt;secret中添加一个新的secret,名字叫ACCESS_TOKEN数值是生成的Token.&lt;/li&gt;
+  &lt;li&gt;这个发布脚本会将build好的站点发布到gh-pages分支中，所以需要你在项目的settings–&amp;gt;General–&amp;gt;Github Pages里面设置发布分支为gh-pages.&lt;/li&gt;
+  &lt;li&gt;在&lt;code class=&quot;highlighter-rouge&quot;&gt;_config.yml&lt;/code&gt;中加上&lt;code class=&quot;highlighter-rouge&quot;&gt;destination: build&lt;/code&gt;避免编译出错&lt;/li&gt;
+  &lt;li&gt;因为Github Action自身的局限，这种计划发布功能仅适用于repo page (类似https://username.github.io/blog/) 而 &lt;strong&gt;无法用于 User Page (类似https://username.github.io/)&lt;/strong&gt; .&lt;/li&gt;
+&lt;/ol&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Markdown的语法介绍</title>
+   <link href="https://diymysite.github.io//blog/archive/2018/04/20/lao-tian-bu-ping-deng.html"/>
+   <updated>2018-04-20T00:00:00+00:00</updated>
+   <id>https://diymysite.github.io//archive/2018/04/20/lao-tian-bu-ping-deng</id>
+   <content type="html">&lt;p&gt;注：示例来自于 &lt;a href=&quot;https://gist.github.com/vvtommy/4200618&quot;&gt;https://gist.github.com/vvtommy/4200618&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;首先声名，这并不是一份完整的&lt;a href=&quot;http://daringfireball.net/projects/markdown/&quot;&gt;Markdown&lt;/a&gt;的语法介绍，需要看完整的介绍请点击&lt;a href=&quot;http://daringfireball.net/projects/markdown/syntax&quot;&gt;Markdown Syntax Documentation&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;另外，这个Jekyll主题使用的Markdown解析器是kramdown，它有一个很酷的功能，那就是自动生成目录(Table of Content)。
+比如打下下面的代码&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;* 不带数字的目录（这里随便打什么都不会显示）
+{:toc}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;就能得到&lt;/p&gt;
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#段落&quot; id=&quot;markdown-toc-段落&quot;&gt;段落&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#换行&quot; id=&quot;markdown-toc-换行&quot;&gt;换行&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#强调&quot; id=&quot;markdown-toc-强调&quot;&gt;强调&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#代码&quot; id=&quot;markdown-toc-代码&quot;&gt;代码&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#列表&quot; id=&quot;markdown-toc-列表&quot;&gt;列表&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#标题&quot; id=&quot;markdown-toc-标题&quot;&gt;标题&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#引用&quot; id=&quot;markdown-toc-引用&quot;&gt;引用&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#链接&quot; id=&quot;markdown-toc-链接&quot;&gt;链接&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#水平分割线&quot; id=&quot;markdown-toc-水平分割线&quot;&gt;水平分割线&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;段落&quot;&gt;段落&lt;/h3&gt;
+
+&lt;p&gt;一个段落是由一个或多个连续的行构成，段落间靠一个或以上视觉上的空行划分。一般的段落不应该用空格或制表符缩进&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;这是一个段落。它有两个句子。
+
+这是另一个段落。它也有
+两个句子。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;换行&quot;&gt;换行&lt;/h3&gt;
+
+&lt;p&gt;在文本中输入的换行会从最终生成的结果中删除，浏览器会根据可用空间自动换行。如果想强迫换行，可以在行尾插入至少两个空格。&lt;/p&gt;
+
+&lt;p&gt;或者使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;/br&amp;gt;&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;强调&quot;&gt;强调&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;*强调* 或者 _强调_  (示例：斜体)
+**加重强调** 或者 __加重强调__ (示例：粗体)
+***特别强调*** 或者 ___特别强调___ (示例：粗斜体)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;em&gt;强调&lt;/em&gt; 或者 &lt;em&gt;强调&lt;/em&gt;  (示例：斜体)&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;加重强调&lt;/strong&gt; 或者 &lt;strong&gt;加重强调&lt;/strong&gt; (示例：粗体)&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;em&gt;特别强调&lt;/em&gt;&lt;/strong&gt; 或者 &lt;strong&gt;&lt;em&gt;特别强调&lt;/em&gt;&lt;/strong&gt; (示例：粗斜体)&lt;/p&gt;
+
+&lt;h3 id=&quot;代码&quot;&gt;代码&lt;/h3&gt;
+
+&lt;p&gt;要在Markdown中插入代码，你有两种选择。 一种是把代码用反引号(`)(键盘上Esc键下面的键)包起，例如：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;夹杂着`一些代码`的文字内容,
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;又或者以制表符或至少四个空格缩进的行，例如：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    第一行代码
+    第二行代码
+    第三行代码
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;后面一种用法会让Markdown保留所有的空白字符——而与之相反，一般情况下，Markdown会删除所有换行和空格，打乱原有的缩进和排版。&lt;/p&gt;
+
+&lt;h3 id=&quot;列表&quot;&gt;列表&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;* 无序(没有编号的)列表中的一项
+    * 一个子项，要以一个制表符或者4个空格缩进
+* 无序列表中的另一个项
+1. 有序(排好序，有编号的)列表中的一项
+2. 有序列表中的另一个项
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;无序(没有编号的)列表中的一项
+    &lt;ul&gt;
+      &lt;li&gt;一个子项，要以一个制表符或者4个空格缩进&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;无序列表中的另一个项
+    &lt;ol&gt;
+      &lt;li&gt;有序(排好序，有编号的)列表中的一项&lt;/li&gt;
+      &lt;li&gt;有序列表中的另一个项&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;标题&quot;&gt;标题&lt;/h3&gt;
+
+&lt;p&gt;可以在标题内容前输入特定数量的井号(‘#’)来实现对应级别的HTML样式的标题(HTML提供六级标题)。例如：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 一级标题
+#### 四级标题
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;一级和二级标题还有一种写法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;一级标题
+===================
+
+二级标题
+--------------------
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;引用&quot;&gt;引用&lt;/h3&gt;
+
+&lt;p&gt;引用只需要在被引用的内容段落开头加上右尖括号(‘&amp;gt;’)即可。你可以选择只在开头加一个。也可以在每行前面都加一个，效果是一样的。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt; 这一整段的内容都会作为一个HTML的引用元素。引用元素是会自动优化排版的（reflowable，可回流）。你可以任意地将引用的内容包含进来，然后所有这些都会被解析成为单独一个引用元素。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;这一整段的内容都会作为一个HTML的引用元素。引用元素是会自动优化排版的（reflowable，可回流）。你可以任意地将引用的内容包含进来，然后所有这些都会被解析成为单独一个引用元素。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;上述内容会转换成以下HTML内容：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;blockquote&amp;gt;&amp;lt;p&amp;gt;这一整段的内容都会作为一个HTML的引用元素。引用元素是会自动优化排版的（reflowable，可回流）。你可以任意地将引用的内容包含进来，然后所有这些都会被解析成为单独一个引用元素。&amp;lt;/p&amp;gt;&amp;lt;/blockquote&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;引用可以嵌套。如果要在一个引用里插入一个引用，可以用两个(‘&amp;gt;’)开头。依此类推，根据嵌套层次加相应数量的符号。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt; 这是一个引用。这是第一行
+这是第二行。
+&amp;gt;&amp;gt; 这是一个嵌套的引用。这是第一行。
+这是第二行
+&amp;gt;
+&amp;gt; 外层引用的第三行。前面需要一个视觉上的空行表示内层嵌套的结束，空行前面的('&amp;gt;')可以有可以没有。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;这是一个引用。这是第一行
+这是第二行。&lt;/p&gt;
+  &lt;blockquote&gt;
+    &lt;p&gt;这是一个嵌套的引用。这是第一行。
+这是第二行&lt;/p&gt;
+  &lt;/blockquote&gt;
+
+  &lt;p&gt;外层引用的第三行。前面需要一个视觉上的空行表示内层嵌套的结束，空行前面的(‘&amp;gt;’)可以有可以没有。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;链接&quot;&gt;链接&lt;/h3&gt;
+
+&lt;p&gt;链接可以在行内插入：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[链接文字](链接地址)
+
+例子： [Markdown](http://zh.wikipedia.com/wiki/Markdown)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;a href=&quot;链接地址&quot;&gt;链接文字&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;例子： &lt;a href=&quot;http://zh.wikipedia.com/wiki/Markdown&quot;&gt;Markdown&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;另一种选择是，链接地址可以放在段落后面的脚注，前面放上链接引用标签区分。举例说，先在内容行内插入以下内容：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[链接文字][链接引用标签]
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后在段落的后面（或者文档的结尾）放上以下内容，就可以生成一个链接：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[链接引用标签]: 链接地址 &quot;链接标题&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;水平分割线&quot;&gt;水平分割线&lt;/h3&gt;
+
+&lt;p&gt;要生成水平分割线，可以在单独一行里输入3个或以上的短横线、星号或者下划线实现。短横线和星号之间可以输入任意空格。以下每一行都产生一条水平分割线。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;* * *
+***
+*****
+- - -
+---------------------------------------
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;本文源代码作为示例&lt;/p&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>置顶示例</title>
+   <link href="https://diymysite.github.io//blog/sticky/2018/04/01/how-to-participate-in-terminus.html"/>
+   <updated>2018-04-01T00:00:00+00:00</updated>
+   <id>https://diymysite.github.io//sticky/2018/04/01/how-to-participate-in-terminus</id>
+   <content type="html">&lt;p&gt;在需要置顶的帖子元信息部分添加 &lt;code class=&quot;highlighter-rouge&quot;&gt;is_sticky: true&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;---
+layout: post
+title:  置顶示例
+date:   2018-04-01
+categories: sticky
+tags: 参与
+description: 记得添加 is_sticky: true
+is_sticky: true
+---
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</content>
+ </entry>
+ 
+
+</feed>
